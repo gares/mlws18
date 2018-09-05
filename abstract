@@ -1,0 +1,34 @@
+ELPI: an extension language with binders and unification variables
+
+We are interested in using languages of the ML family to build software
+manipulating higher order symbolic expressions, mostly theorem provers such
+as Coq. While ML was designed with this use case in mind it provides little
+support for the most tricky aspects of symbolic expressions: binders and
+unification variables.  Their interplay makes core algorithms such as type
+inference hard to master and more in general the components built on top of
+them buggy and unsatisfactory from the user's point of view.
+Letting users fix or extend these parts of the system by writing ML code
+proved to be difficult, at best.
+
+We propose to follow a different approach that proved to be successful for
+other kinds of applications, like text editors and video games: adopt an
+high level, easy to use, extension language.
+
+ELPI is a programming language that features native support for both
+binders and unification variables. It extends the Higher Order Abstract
+Syntax approach by letting one reuse the binders and the unification
+variables of the programming language in order to implement the ones of the
+object language.  More precisely ELPI is a variant of λProlog enriched with
+modes, constraints and constraint handling rules.
+
+ELPI is implemented as an OCaml library meant to be linked to other
+applications in order to provide a very high level extension language.
+It comes with an FFI to describe the bridge between the host application
+and the extension language, as well as an API to customize the
+the extension language, for example by registering quotations or external
+constraint solvers.
+
+In this talk we introduce the ELPI programming language and its
+implementation.  As a running example we link ELPI to a toy interpreter
+for an ML like language and we implement the W algorithm in ELPI.
+
