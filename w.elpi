@@ -1,24 +1,22 @@
-filter [] _ [].
-filter [X|XS] P [X|YS] :- P X, !, filter XS P YS.
-filter [_|XS] P YS :- filter XS P YS.
-
-mem [X|_] X :- !.
-mem [_|XS] X :- mem XS X.
-
-if G T _ :- G, !, T.
-if _ _ E :- E.
-
 kind term type.
+
 type app term -> term -> term.
 type lam (term -> term) -> term.
 type let term -> ty -> (term -> term) -> term.
 type eq term -> term -> term -> term.
 
+
 kind tye type.
 infixr ==> 50.
 infixl # 60.
+
 type (==>) tye -> tye -> tye.
 type (#) tye -> tye -> tye.
+type integer tye.
+type boolean tye.
+type list tye.
+type pair tye.
+
 
 kind ty type.
 type all (tye -> ty) -> ty.
@@ -36,23 +34,13 @@ type inteq term.
 type listeq term.
 type paireq term.
 
-type integer tye.
-type boolean tye.
-type list tye.
-type pair tye.
-
 % constants
 w one    (mono integer).
 w plus   (mono (integer ==> integer ==> integer)).
 w size   (all x\ mono (list # x ==> integer)).
-w xnil    (all x\ mono (list # x)).
-w xcons   (all x\ mono (x ==> list # x ==> list # x)).
+w xnil   (all x\ mono (list # x)).
+w xcons  (all x\ mono (x ==> list # x ==> list # x)).
 w comma  (all x\ all y\ mono (x ==> y ==> (pair # x # y))).
-
-eqtype integer inteq.
-eqtype boolean booleq.
-eqtype (list # A) (app listeq F) :- eqtype A F.
-eqtype (pair # A # B) (app (app paireq FA) FB) :- eqtype A FA, eqtype B FB.
 
 pred w i:term, o:ty.
 
@@ -86,12 +74,20 @@ specialize X (all F) T :- specialize X (F FRESH_) T.
 specialize _ (mono T) T.
 specialize X (mono TY) ETY :- type-error X TY ETY.
 
+pred eqtype o:tye, o:term.
+
+eqtype integer inteq.
+eqtype boolean booleq.
+eqtype (list # A) (app listeq F) :- eqtype A F.
+eqtype (pair # A # B) (app (app paireq FA) FB) :- eqtype A FA, eqtype B FB.
+
 pred overbar i:ty, o:ty.
 
 constraint w overbar {
 
-rule \ (G ?- overbar T T1)
-     | (generalize G T POLYT) <=> (T1 = POLYT).
+rule \  (G ?- overbar T T1)
+     |  (generalize G T POLYT)
+    <=> (T1 = POLYT).
 
 rule \ (G ?- overbar T _) <=> (print "overbar" G "|-" T "failed", halt).
 
@@ -123,10 +119,25 @@ copy list list.
 copy pair pair.
 copy (uvar U L) (uvar U L).
 
-quantify [] X (mono X1) :- copy X X1.
+quantify [] T (mono T1) :- copy T T1.
 quantify [X|XS] T (all x\ T2 x) :-
   quantify XS T T1,
   pi x\ copy (uvar X _) x => copy-ty T1 (T2 x).
 
 }
 
+% {{{ stdlib: mem, filter, if...
+
+filter [] _ [].
+filter [X|XS] P [X|YS] :- P X, !, filter XS P YS.
+filter [_|XS] P YS :- filter XS P YS.
+
+mem [X|_] X :- !.
+mem [_|XS] X :- mem XS X.
+
+if G T _ :- G, !, T.
+if _ _ E :- E.
+
+% }}}
+
+% vim:set foldmethod=marker:

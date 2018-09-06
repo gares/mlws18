@@ -1,12 +1,18 @@
+(* terms: we use a uuid to refer to some specific nodes ******************** *)
+
 type uuid = string
 
 type term =
  | Const of string
- | Var of int
+ | Var of int (* De Bruijn indexes *)
  | App of term * term
  | Lam of term
  | Let of uuid * term * term
- | Eq of uuid * term * term
+ | Eq  of uuid * term * term
+
+(* {{{ examples *)
+
+(* yes, one should have a parser to build these... *)
 
 let comma, nil, cons, one, size =
   Const "comma", Const "xnil", Const "xcons", Const "one", Const "size"
@@ -36,27 +42,40 @@ let example3 =
   Eq("?eq",App (App (cons, one), nil),
            App (App (comma, one), one))
 ;;
+
 let example4 =
   "size 1",
   App(size, one)
 ;;
-                                
+        
+(* }}} *)                        
 
-module EA = Elpi_API
-module E = EA.Extend.Data
-module C = EA.Extend.Compile
+open Elpi_API
+module E  = Extend.Data
+module C  = Extend.Compile
+module Pp = Extend.Pp
+module M  = Data.StrMap
+module BI = Extend.BuiltInPredicate
+module CS = Extend.CustomState
 
+(* terms -> elpi terms ***************************************************** *)
 
 let appc = E.Constants.from_stringc "app"
 let lamc = E.Constants.from_stringc "lam"
 let letc = E.Constants.from_stringc "let"
-let eqc = E.Constants.from_stringc "eq"
+let eqc  = E.Constants.from_stringc "eq"
 
-let cs_uuid = EA.Extend.Compile.State.declare ~name:"uuid-map"
-  ~init:(fun _ -> EA.Data.StrMap.empty)
-  ~pp:(fun fmt m -> ())
+let cs_uuid = C.State.declare ~name:"uuid-map"
+  ~init:(fun _ -> M.empty)
+  ~pp:(M.pp Format.pp_print_string)
+
+let mkQ st uuid =
+  let st, name, t = C.fresh_Arg st ~name_hint:uuid ~args:[] in
+  let st = C.State.update cs_uuid st (M.add name uuid) in
+  st, t
 
 let rec term2elpi st ctx = function
+  | Const s -> st, E.Constants.from_string s
   | Var x -> st, E.mkConst (ctx - x - 1)
   | App(h,a) ->
      let st, h = term2elpi st ctx h in
@@ -66,77 +85,88 @@ let rec term2elpi st ctx = function
      let st, t = term2elpi st (succ ctx) t in
      st, E.mkApp lamc (E.mkLam t) []
   | Let(uuid, t, b) ->
-     let st, name, ty = C.fresh_Arg st ~name_hint:uuid ~args:[] in
-     let st = EA.Extend.Compile.State.update cs_uuid st (EA.Data.StrMap.add name uuid) in
      let st, t = term2elpi st ctx t in
      let st, b = term2elpi st (succ ctx) b in
+     let st, ty = mkQ st uuid in
      st, E.mkApp letc t [ty; E.mkLam b]
-  | Const s -> st, E.Constants.from_string s
   | Eq(uuid, lhs, rhs) ->
-     let st, name, f = C.fresh_Arg st ~name_hint:uuid ~args:[] in
-     let st = EA.Extend.Compile.State.update cs_uuid st (EA.Data.StrMap.add name uuid) in
      let st, lhs = term2elpi st ctx lhs in
      let st, rhs = term2elpi st ctx rhs in
-     st, E.mkApp eqc f [lhs;rhs]
+     let st, cmpf = mkQ st uuid in
+     st, E.mkApp eqc cmpf [lhs;rhs]
 
-let rs_uuid = EA.Extend.CustomConstraint.declare ~name:"uuid-map"
-  ~init:(EA.Extend.CustomConstraint.CompilerState (cs_uuid,fun x -> x))
-  ~pp:(fun fmt m -> ())
+let rs_uuid = CS.declare ~name:"uuid-map"
+  ~init:(CS.CompilerState (cs_uuid, fun x -> x))
+  ~pp:(M.pp Format.pp_print_string)
 
-exception TypeError of EA.Extend.Data.term * EA.Extend.Data.term * EA.Extend.Data.term
+(* builtin ***************************************************************** *)
 
-let extra_builtins = let open EA.Extend.BuiltInPredicate in [
+exception TypeError of E.term * E.term * E.term
+
+let pp_err t ty ety =
+  Format.printf "Type error:@ the term %a@ has type %a@ but is expected to have type %a\n%!" (Pp.term 0) t (Pp.term 0) ty (Pp.term 0) ety
+
+let extra_builtins = let open BI in [
   MLCode(Pred("type-error",
-    In(any,"T",
-    In(any,"TY",
-    In(any,"ETY",
-    Easy("raises a type error: the term T has type TY but is expected to have type ETY")))),
+    In(any,"the term",
+    In(any,"its type",
+    In(any,"the type expected by its context",
+    Easy("raise a fatal type inference error")))),
     (fun t ty ety ~depth:_ -> raise (TypeError(t,ty,ety)))),
   DocNext)
 ]
 
 let _ =
   Format.printf "\n========= builtins ==========\n%!";
-  EA.Extend.BuiltInPredicate.document Format.std_formatter extra_builtins
+  BI.document Format.std_formatter extra_builtins
 ;;
 
+(* w *********************************************************************** *)
+
 let w =
+  (* load the elpi program *)
   let elpi_flags =
     try
       let ic, _ as p = Unix.open_process "elpi -where 2>/dev/null" in
       let w = input_line ic in
       let _ = Unix.close_process p in ["-I";w]
     with _ -> [] in
-  let builtins = EA.Extend.BuiltInPredicate.builtin_of_declaration
+  let builtins = BI.builtin_of_declaration
     (Elpi_builtin.std_declarations @ extra_builtins) in
-  let header, _ = EA.Setup.init ~builtins ~basedir:"./" elpi_flags in
-  let p = EA.Parse.program ["w.elpi"] in
-  let p = EA.Compile.program header [p] in
+  let header, _ = Setup.init ~builtins ~basedir:"./" elpi_flags in
+  let p = Parse.program ["w.elpi"] in
+  let p = Compile.program header [p] in
+
 fun (text, ast) ->
+  (* run w on a term *)
   let q = C.query p (fun ~depth st ->
-     let st, name, ty = C.fresh_Arg st ~name_hint:"?ty" ~args:[] in
-     let st = EA.Extend.Compile.State.update cs_uuid st (EA.Data.StrMap.add name "?ty") in
     let st, ast = term2elpi st depth ast in
+    let st, ty = mkQ st "?ty" in
     st, E.mkApp (E.Constants.from_stringc "w") ast [ty]) in
-  let exe = EA.Compile.link q in
   
-  if not (EA.Compile.static_check header q) then
+  if not (Compile.static_check header q) then
     failwith "w.elpi does not type check";
 
+  let exe = Compile.link q in
+
   Format.printf "\n========= W: %s ==========\n%!" text;
-  match EA.Execute.once exe with
-  | EA.Execute.Success { EA.Data.assignments; EA.Data.custom_constraints = state } ->
-      EA.Data.StrMap.iter (fun k v ->
-         Format.printf "%s := %a@\n" (EA.Data.StrMap.find k (EA.Extend.CustomConstraint.get rs_uuid state)) EA.Pp.term v)
+  match Execute.once exe with
+  | Execute.Success { Data.assignments; state } ->
+      M.iter (fun k v ->
+        Format.printf "%s := %a@\n" (M.find k (CS.get rs_uuid state))
+                                    (Pp.term 0) (E.of_term v))
         assignments
-  | EA.Execute.Failure -> failwith "w.elpi is buggy"
-  | EA.Execute.NoMoreSteps -> assert false
-  | exception TypeError(t,ty,ety) ->
-      Format.printf "Type error:@ the term %a@ has type %a@ but is expected to have type %a\n%!" (EA.Extend.Pp.term 0) t (EA.Extend.Pp.term 0) ty (EA.Extend.Pp.term 0) ety
+  | Failure -> failwith "w.elpi is buggy"
+  | NoMoreSteps -> assert false
+  | exception TypeError(t,ty,ety) -> pp_err t ty ety
 ;;
+
+(* main ******************************************************************** *)
 
 let _ = w example0
 let _ = w example1
 let _ = w example2
 let _ = w example3
 let _ = w example4
+
+(* vim:set foldmethod=marker: *)
