@@ -1,48 +1,46 @@
+%%%%%%%%%%% datatypes %%%%%%%%%%%%%%%
+
+% terms
 kind term type.
 
 type app term -> term -> term.
 type lam (term -> term) -> term.
 type let term -> ty -> (term -> term) -> term.
 type eq term -> term -> term -> term.
+type num int -> term.
+type const string -> term.
 
-
+% type expressions
 kind tye type.
+
 infixr ==> 50.
 infixl # 60.
 
 type (==>) tye -> tye -> tye.
-type (#) tye -> tye -> tye.
+type (#)   tye -> tye -> tye.
+
 type integer tye.
 type boolean tye.
 type list tye.
 type pair tye.
 
-
+% types
 kind ty type.
+
 type all (tye -> ty) -> ty.
 type mono tye -> ty.
 
-type one term.
-type plus term.
-type size term.
-type xnil term.
-type xcons term.
-type comma term.
-
-type booleq term.
-type inteq term.
-type listeq term.
-type paireq term.
-
-% constants
-w one    (mono integer).
-w plus   (mono (integer ==> integer ==> integer)).
-w size   (all x\ mono (list # x ==> integer)).
-w xnil   (all x\ mono (list # x)).
-w xcons  (all x\ mono (x ==> list # x ==> list # x)).
-w comma  (all x\ all y\ mono (x ==> y ==> (pair # x # y))).
+%%%%%%%%%%%% w %%%%%%%%%%%%%%
 
 pred w i:term, o:ty.
+
+% constants
+w (num _)         (mono integer).
+w (const "plus")  (mono (integer ==> integer ==> integer)).
+w (const "size")  (all x\ mono (list # x ==> integer)).
+w (const "[]")    (all x\ mono (list # x)).
+w (const "::")    (all x\ mono (x ==> list # x ==> list # x)).
+w (const ",")     (all x\ all y\ mono (x ==> y ==> (pair # x # y))).
 
 w (app F X) (mono R) :-
   w F (mono (A ==> R)),
@@ -51,21 +49,20 @@ w (app F X) (mono R) :-
 w (lam F) (mono (A ==> R)) :-
   pi x\ w x (mono A) => w (F x) (mono R).
 
-w (let F FP B) (mono TC) :-
-  w F (mono FT),
-  declare_constraint (overbar (mono FT) FP) W_,
-  pi x\ w x FP => w (B x) (mono TC).
+w (let F PT B) (mono TB) :-
+  w F (mono T),
+  overbar (mono T) PT,
+  pi x\ w x PT => w (B x) (mono TB).
 
 w (eq F LHS RHS) (mono boolean) :-
   w LHS (mono T),
   w RHS (mono T),
   % monodirectional?
-  % w RHS (mono T1), if (not(T1 = T)) (type-error RHS T1 T) true,
+  % w RHS (mono T1), ( (T1 = T) ; (type-error RHS T1 T) ),
   eqtype T F.
 
 w X (mono T) :- w X (all Poly), specialize X (all Poly) T.
 
-w _ (all _) :- !, fail.
 w X (mono ETY) :- w X (mono TY), type-error X TY ETY.
 
 pred specialize i:term, i:ty, o:tye.
@@ -74,14 +71,12 @@ specialize X (all F) T :- specialize X (F FRESH_) T.
 specialize _ (mono T) T.
 specialize X (mono TY) ETY :- type-error X TY ETY.
 
-pred eqtype o:tye, o:term.
-
-eqtype integer inteq.
-eqtype boolean booleq.
-eqtype (list # A) (app listeq F) :- eqtype A F.
-eqtype (pair # A # B) (app (app paireq FA) FB) :- eqtype A FA, eqtype B FB.
+%%%%%%%%%%%% overbar %%%%%%%%%%%%%
 
 pred overbar i:ty, o:ty.
+
+overbar (mono FT) FP :-
+  declare_constraint (overbar (mono FT) FP) _.
 
 constraint w overbar {
 
@@ -125,6 +120,17 @@ quantify [X|XS] T (all x\ T2 x) :-
   pi x\ copy (uvar X _) x => copy-ty T1 (T2 x).
 
 }
+
+%%%%%%%%%%%%% eqtypes %%%%%%%%%%%%%%%%
+
+pred eqtype o:tye, o:term.
+
+eqtype integer (const "inteq").
+eqtype boolean (const "booleq").
+eqtype (list # A) (app (const "listeq") F) :- eqtype A F.
+eqtype (pair # A # B) (app (app (const "paireq") FA) FB) :-
+  eqtype A FA, eqtype B FB.
+
 
 % {{{ stdlib: mem, filter, if...
 
