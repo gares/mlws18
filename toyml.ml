@@ -30,21 +30,21 @@ let cs_positions = C.State.declare ~name:"positions"
 let rs_positions = CS.declare ~name:"positions"
   ~init:(CS.CompilerState (cs_positions, fun x -> x)) ~pp:(fun _ _ -> ())
 
-(* terms -> elpi terms *************************************************** *)
+(* terms -> elpi terms ************************************************** *)
 
 let appc   = E.Constants.from_stringc "app"
 let lamc   = E.Constants.from_stringc "lam"
 let letc   = E.Constants.from_stringc "let"
 let eqc    = E.Constants.from_stringc "eq"
 let numc   = E.Constants.from_stringc "num"
-let constc = E.Constants.from_stringc "const"
+let globc = E.Constants.from_stringc "global"
 
 let save_position loc (st, t) =
   let st = C.State.update cs_positions st (P.add t loc) in
   st, t
 
 let rec lookup x = function
-  | [] -> E.mkApp constc (E.C.of_string x) []
+  | [] -> E.mkApp globc (E.C.of_string x) []
   | y :: ys when x = y -> E.mkConst (List.length ys)
   | _ :: ys -> lookup x ys
 
@@ -71,7 +71,7 @@ let rec embed st ctx { v; loc } = save_position loc begin
      st, E.mkApp eqc cmpf [lhs;rhs]
 end
 
-(* builtin ***************************************************************** *)
+(* builtin *************************************************************** *)
 
 exception TypeError of position option * E.term * E.term * E.term
 
@@ -92,7 +92,7 @@ let _ =
   BI.document Format.std_formatter extra_builtins
 ;;
 
-(* w *********************************************************************** *)
+(* w ********************************************************************* *)
 
 let subtext text fmt ( { Lexing.pos_cnum = a } , { Lexing.pos_cnum = b } ) =
   let open String in
@@ -149,23 +149,18 @@ fun (text, ast) ->
   | exception TypeError(loc,t,ty,ety) -> pp_err text loc t ty ety
 ;;
 
-(* main ******************************************************************** *)
+(* main ****************************************************************** *)
 
-let parse s =
-(*   Printf.printf "Parsing: '%s'\n" s; *)
-  let lexbuf = Lexing.from_string s in
-  let res = s, Parser.main Lexer.token lexbuf in
-(*   Printf.printf "OK: %s %s\n" s (show_ast (snd res)); (pp_tree s (snd res)) ; *)
-  res
+let parse s = s, Parser.main Lexer.token (Lexing.from_string s)
 
 (* poly *)
 let _ = w @@ parse "let id x = x in id []"
 let _ = w @@ parse "let id x = x in (id [], id 1)"
 let _ = w @@ parse "let f y = let g x = (x,y) in g y in f 1"
+(* eqtype *)
+let _ = w @@ parse "let id x = x in id [1] = []"
 (* errors *)
 let _ = w @@ parse "size 1"
 let _ = w @@ parse "[1] = (1,1)"
-(* eqtype *)
-let _ = w @@ parse "let id x = x in id [1] = []"
         
 (* vim:set foldmethod=marker: *)

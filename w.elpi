@@ -3,31 +3,30 @@
 % terms
 kind term type.
 
+type num    int -> term.
+type global string -> term.
+
 type app term -> term -> term.
 type lam (term -> term) -> term.
 type let term -> ty -> (term -> term) -> term.
-type eq term -> term -> term -> term.
-type num int -> term.
-type const string -> term.
+type eq  term -> term -> term -> term.
+
 
 % type expressions
 kind tye type.
 
 infixr ==> 50.
-infixl # 60.
-
 type (==>) tye -> tye -> tye.
-type (#)   tye -> tye -> tye.
 
 type integer tye.
 type boolean tye.
-type list tye.
-type pair tye.
+type list    tye -> tye.
+type pair    tye -> tye -> tye.
 
 % types
 kind ty type.
 
-type all (tye -> ty) -> ty.
+type all  (tye -> ty) -> ty.
 type mono tye -> ty.
 
 %%%%%%%%%%%% w %%%%%%%%%%%%%%
@@ -35,23 +34,28 @@ type mono tye -> ty.
 pred w i:term, o:ty.
 
 % constants
-w (num _)         (mono integer).
-w (const "plus")  (mono (integer ==> integer ==> integer)).
-w (const "size")  (all x\ mono (list # x ==> integer)).
-w (const "[]")    (all x\ mono (list # x)).
-w (const "::")    (all x\ mono (x ==> list # x ==> list # x)).
-w (const ",")     (all x\ all y\ mono (x ==> y ==> (pair # x # y))).
 
-w (app F X) (mono R) :-
-  w F (mono (A ==> R)),
-  w X (mono A).
+w (num _)          (mono integer).
+w (global "plus")  (mono (integer ==> integer ==> integer)).
 
-w (lam F) (mono (A ==> R)) :-
-  pi x\ w x (mono A) => w (F x) (mono R).
+w (global "[]")    (all x\ mono (list x)).
+w (global "::")    (all x\ mono (x ==> list x ==> list x)).
+w (global "size")  (all x\ mono (list x ==> integer)).
+
+w (global ",")     (all x\ all y\ mono (x ==> y ==> (pair x y))).
+
+% terms
+
+w (app H A) (mono T) :-
+  w H (mono (S ==> T)),
+  w A (mono S).
+
+w (lam F) (mono (S ==> T)) :-
+  pi x\ w x (mono S) => w (F x) (mono T).
 
 w (let F PT B) (mono TB) :-
   w F (mono T),
-  overbar (mono T) PT,
+  gammabar (mono T) PT,
   pi x\ w x PT => w (B x) (mono TB).
 
 w (eq F LHS RHS) (mono boolean) :-
@@ -59,11 +63,12 @@ w (eq F LHS RHS) (mono boolean) :-
   w RHS (mono T),
   % monodirectional?
   % w RHS (mono T1), ( (T1 = T) ; (type-error RHS T1 T) ),
-  eqtype T F.
+  eqbar T F.
 
 w X (mono T) :- w X (all Poly), specialize X (all Poly) T.
 
 w X (mono ETY) :- w X (mono TY), type-error X TY ETY.
+
 
 pred specialize i:term, i:ty, o:tye.
 
@@ -71,20 +76,31 @@ specialize X (all F) T :- specialize X (F FRESH_) T.
 specialize _ (mono T) T.
 specialize X (mono TY) ETY :- type-error X TY ETY.
 
-%%%%%%%%%%%% overbar %%%%%%%%%%%%%
+%%%%%%%%%%%%% eqbars %%%%%%%%%%%%%%%%
 
-pred overbar i:ty, o:ty.
+pred eqbar o:tye, o:term.
 
-overbar (mono FT) FP :-
-  declare_constraint (overbar (mono FT) FP) _.
+eqbar integer (global "inteq").
+eqbar boolean (global "booleq").
+eqbar (list A) (app (global "listeq") F) :- eqbar A F.
+eqbar (pair A B) (app (app (global "paireq") FA) FB) :-
+  eqbar A FA, eqbar B FB.
 
-constraint w overbar {
 
-rule \  (G ?- overbar T T1)
-     |  (generalize G T POLYT)
+%%%%%%%%%%%% gammabar %%%%%%%%%%%%%
+
+pred gammabar i:ty, o:ty.
+
+gammabar (mono FT) FP :-
+  declare_constraint (gammabar (mono FT) FP) _.
+
+constraint w gammabar {
+
+rule \  (G ?- gammabar T T1)
+     |  (print (G ?- gammabar T T1), generalize G T POLYT)
     <=> (T1 = POLYT).
 
-rule \ (G ?- overbar T _) <=> (print "overbar" G "|-" T "failed", halt).
+rule \ (G ?- gammabar T _) <=> (print "gammabar" G "|-" T "failed", halt).
 
 generalize G (mono T) ALL :-
   free-ty (mono T) [] VT,
@@ -92,45 +108,36 @@ generalize G (mono T) ALL :-
   filter VT (x\ not(mem VG x)) Q,
   quantify Q T ALL.
 
+% computation of free (unification) variables
 free-ty (mono X) L L1 :- free X L L1.
 free-ty (all F) L L1 :- pi x\ free-ty (F x) L L1.
 
 free-gamma [] L L.
 free-gamma [w _ T|X] L L2 :- free-ty T L L1, free-gamma X L1 L2.
 
-free (A # B) L L2 :- free A L L1, free B L1 L2.
+free (list A) L L1 :- free A L L1.
+free (pair A B) L L2 :- free A L L1, free B L1 L2.
 free (A ==> B) L L2 :- free A L L1, free B L1 L2.
 free (uvar X _) L L1 :- if (mem L X) (L1 = L) (L1 = [X|L]).
 free _ L L.
 
-copy-ty (mono X1) (mono X2) :- copy X1 X2.
-copy-ty (all F1) (all F2) :- pi x\ copy x x => copy-ty (F1 x) (F2 x).
-
-copy (A ==> B) (A1 ==> B1) :- copy A A1, copy B B1.
-copy (A # B) (A1 # B1) :- copy A A1, copy B B1.
-copy integer integer.
-copy boolean boolean.
-copy list list.
-copy pair pair.
-copy (uvar U L) (uvar U L).
-
+% quantification (binding) of a list of variables
 quantify [] T (mono T1) :- copy T T1.
 quantify [X|XS] T (all x\ T2 x) :-
   quantify XS T T1,
   pi x\ copy (uvar X _) x => copy-ty T1 (T2 x).
 
+copy-ty (mono X1) (mono X2) :- copy X1 X2.
+copy-ty (all F1) (all F2) :- pi x\ copy x x => copy-ty (F1 x) (F2 x).
+
+copy integer integer.
+copy boolean boolean.
+copy (A ==> B) (A1 ==> B1) :- copy A A1, copy B B1.
+copy (list A) (list A1) :- copy A A1.
+copy (pair A B) (pair A1 B1) :- copy A A1, copy B B1.
+copy (uvar U L) (uvar U L).
+
 }
-
-%%%%%%%%%%%%% eqtypes %%%%%%%%%%%%%%%%
-
-pred eqtype o:tye, o:term.
-
-eqtype integer (const "inteq").
-eqtype boolean (const "booleq").
-eqtype (list # A) (app (const "listeq") F) :- eqtype A F.
-eqtype (pair # A # B) (app (app (const "paireq") FA) FB) :-
-  eqtype A FA, eqtype B FB.
-
 
 % {{{ stdlib: mem, filter, if...
 
