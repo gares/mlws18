@@ -1,0 +1,9 @@
+*.cm*
+*.o
+.*.un~
+.*.swp
+parser.ml
+parser.mli
+parser.output
+lexer.ml
+toyml
