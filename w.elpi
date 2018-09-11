@@ -97,16 +97,14 @@ gammabar (mono FT) FP :-
 constraint w gammabar {
 
 rule \  (G ?- gammabar T T1)
-     |  (print (G ?- gammabar T T1), generalize G T POLYT)
+     |  (generalize G T POLYT)
     <=> (T1 = POLYT).
 
-rule \ (G ?- gammabar T _) <=> (print "gammabar" G "|-" T "failed", halt).
-
-generalize G (mono T) ALL :-
+generalize Gamma (mono T) PolyT :-
   free-ty (mono T) [] VT,
-  free-gamma G [] VG,
-  filter VT (x\ not(mem VG x)) Q,
-  quantify Q T ALL.
+  free-gamma Gamma [] VGamma,
+  filter VT (x\ not(mem VGamma x)) ToQuantify,
+  bind ToQuantify T PolyT.
 
 % computation of free (unification) variables
 free-ty (mono X) L L1 :- free X L L1.
@@ -122,10 +120,10 @@ free (uvar X _) L L1 :- if (mem L X) (L1 = L) (L1 = [X|L]).
 free _ L L.
 
 % quantification (binding) of a list of variables
-quantify [] T (mono T1) :- copy T T1.
-quantify [X|XS] T (all x\ T2 x) :-
-  quantify XS T T1,
-  pi x\ copy (uvar X _) x => copy-ty T1 (T2 x).
+bind [] T (mono T1) :- copy T T1.
+bind [X|XS] T (all x\ T2 x) :-
+  bind XS T T1,
+  pi c\ copy (uvar X _) c => copy-ty T1 (T2 c).
 
 copy-ty (mono X1) (mono X2) :- copy X1 X2.
 copy-ty (all F1) (all F2) :- pi x\ copy x x => copy-ty (F1 x) (F2 x).
@@ -153,4 +151,4 @@ if _ _ E :- E.
 
 % }}}
 
-% vim:set foldmethod=marker:
+% vim:set foldmethod=marker spelllang=:
