@@ -9,7 +9,7 @@ type global string -> term.
 type app term -> term -> term.
 type lam (term -> term) -> term.
 type let term -> ty -> (term -> term) -> term.
-type eq  term -> term -> term -> term.
+type eq  term -> term -> term.
 
 
 % type expressions
@@ -24,10 +24,14 @@ type list    tye -> tye.
 type pair    tye -> tye -> tye.
 
 % types
+kind eq? type.
+type any eq?.
+type eqt eq?.
+
 kind ty type.
 
-type all  (tye -> ty) -> ty.
-type mono tye -> ty.
+type all    eq? -> (tye -> ty) -> ty.
+type mono   tye -> ty.
 
 %%%%%%%%%%%% w %%%%%%%%%%%%%%
 
@@ -38,11 +42,12 @@ pred w i:term, o:ty.
 w (num _)          (mono integer).
 w (global "plus")  (mono (integer ==> integer ==> integer)).
 
-w (global "[]")    (all x\ mono (list x)).
-w (global "::")    (all x\ mono (x ==> list x ==> list x)).
-w (global "size")  (all x\ mono (list x ==> integer)).
+w (global "[]")    (all any x\ mono (list x)).
+w (global "::")    (all any x\ mono (x ==> list x ==> list x)).
+w (global "size")  (all any x\ mono (list x ==> integer)).
+w (global "undup") (all eqt x\ mono (list x ==> list x)).
 
-w (global ",")     (all x\ all y\ mono (x ==> y ==> (pair x y))).
+w (global ",")     (all any x\ all any y\ mono (x ==> y ==> (pair x y))).
 
 % terms
 
@@ -58,34 +63,54 @@ w (let F PT B) (mono TB) :-
   gammabar (mono T) PT,
   pi x\ w x PT => w (B x) (mono TB).
 
-w (eq F LHS RHS) (mono boolean) :-
+w (eq LHS RHS) (mono boolean) :-
   w LHS (mono T),
-  w RHS (mono T),
-  % monodirectional?
-  % w RHS (mono T1), ( (T1 = T) ; (type-error RHS T1 T) ),
-  eqbar T F.
+  w RHS (mono T), % (T = T1 ; type-error RHS T1 T ),
+  eqbar LHS T.
 
-w X (mono T) :- w X (all Poly), specialize X (all Poly) T.
+w X (mono T) :- w X (all E Poly), specialize X (all E Poly) T.
 
-w X (mono ETY) :- w X (mono TY), type-error X TY ETY.
+pred err.
 
+w X (mono ETY) :- not err, err => w X (mono TY), type-error X TY ETY.
 
 pred specialize i:term, i:ty, o:tye.
 
-specialize X (all F) T :- specialize X (F FRESH_) T.
+specialize X (all any F) T :- specialize X (F E_) T.
+specialize X (all eqt F) T :- specialize X (F E) T, (eqbar X E).
 specialize _ (mono T) T.
 specialize X (mono TY) ETY :- type-error X TY ETY.
 
+main T TY :- theta [], w T TY.
+
 %%%%%%%%%%%%% eqbars %%%%%%%%%%%%%%%%
 
-pred eqbar o:tye, o:term.
+pred eqbar i:term, i:tye.
 
-eqbar integer (global "inteq").
-eqbar boolean (global "booleq").
-eqbar (list A) (app (global "listeq") F) :- eqbar A F.
-eqbar (pair A B) (app (app (global "paireq") FA) FB) :-
-  eqbar A FA, eqbar B FB.
+eqbar _ integer.
+eqbar _ boolean.
+eqbar X (list A) :- eqbar X A.
+eqbar X (pair A B) :- eqbar X A, eqbar X B.
 
+eqbar X T :- var T, declare_constraint (eqbar X T) [T,_].
+
+eqbar X _ :- eqtype-error X.
+
+%%%%%%%%%%%%% theta %%%%%%%%%%%%%%%%
+
+pred theta i:list tye.
+
+theta L :- declare_constraint (theta L) _.
+
+constraint w gammabar eqbar theta {
+
+rule (eqbar _ V) \ (theta L) | (not(mem-theta L V)) <=> (theta [V|L]).
+
+% 'uvar X L' is the frozen 'X' and its arguments 'L'
+mem-theta [uvar X _|_] (uvar X _).
+mem-theta [uvar _ _|XS] Y :- mem-theta XS Y.
+
+}
 
 %%%%%%%%%%%% gammabar %%%%%%%%%%%%%
 
@@ -94,21 +119,22 @@ pred gammabar i:ty, o:ty.
 gammabar (mono FT) FP :-
   declare_constraint (gammabar (mono FT) FP) _.
 
-constraint w gammabar {
+constraint w gammabar eqbar theta {
 
-rule \  (G ?- gammabar T T1)
-     |  (generalize G T POLYT)
-    <=> (T1 = POLYT).
+rule (theta L)                   % matched
+     \  (G ?- gammabar T T1)     % matched and removed
+     |  (generalize L G T POLYT) % guard
+    <=> (T1 = POLYT).            % new goal
 
-generalize Gamma (mono T) PolyT :-
+generalize EqVars Gamma (mono T) PolyT :-
   free-ty (mono T) [] VT,
   free-gamma Gamma [] VGamma,
   filter VT (x\ not(mem VGamma x)) ToQuantify,
-  bind ToQuantify T PolyT.
+  bind EqVars ToQuantify T PolyT.
 
 % computation of free (unification) variables
 free-ty (mono X) L L1 :- free X L L1.
-free-ty (all F) L L1 :- pi x\ free-ty (F x) L L1.
+free-ty (all _ F) L L1 :- pi x\ free-ty (F x) L L1.
 
 free-gamma [] L L.
 free-gamma [w _ T|X] L L2 :- free-ty T L L1, free-gamma X L1 L2.
@@ -120,13 +146,14 @@ free (uvar X _) L L1 :- if (mem L X) (L1 = L) (L1 = [X|L]).
 free _ L L.
 
 % quantification (binding) of a list of variables
-bind [] T (mono T1) :- copy T T1.
-bind [X|XS] T (all x\ T2 x) :-
-  bind XS T T1,
+bind _ [] T (mono T1) :- copy T T1.
+bind EqVars [X|XS] T (all E x\ T2 x) :-
+  if (mem-theta EqVars (uvar X _)) (E = eqt) (E = any),
+  bind EqVars XS T T1,
   pi c\ copy (uvar X _) c => copy-ty T1 (T2 c).
 
 copy-ty (mono X1) (mono X2) :- copy X1 X2.
-copy-ty (all F1) (all F2) :- pi x\ copy x x => copy-ty (F1 x) (F2 x).
+copy-ty (all E F1) (all E F2) :- pi x\ copy x x => copy-ty (F1 x) (F2 x).
 
 copy integer integer.
 copy boolean boolean.

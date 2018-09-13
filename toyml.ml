@@ -10,13 +10,10 @@ module CS = Extend.CustomState
 
 (* output from elpi  *************************************************** *)
 
-type elpi_output = TypeInfo of position | EQTypeCode of position
-[@@deriving show]
-
 let cs_output = C.State.declare ~name:"output-map"
-  ~init:(fun _ -> M.empty) ~pp:(M.pp pp_elpi_output)
+  ~init:(fun _ -> M.empty) ~pp:(M.pp pp_position)
 let rs_output = CS.declare ~name:"output-map"
-  ~init:(CS.CompilerState (cs_output, fun x -> x)) ~pp:(M.pp pp_elpi_output)
+  ~init:(CS.CompilerState (cs_output, fun x -> x)) ~pp:(M.pp pp_position)
 
 let mkQ st loc =
   let st, name, t = C.fresh_Arg st ~name_hint:"?" ~args:[] in
@@ -60,20 +57,20 @@ let rec embed st ctx { v; loc } = save_position loc begin
      let st, t = embed st (n :: ctx) t in
      st, E.mkApp lamc (E.mkLam t) []
   | Let(n, t, b) ->
-     let st, ty = mkQ st (TypeInfo t.loc) in
+     let st, ty = mkQ st t.loc in
      let st, t = embed st ctx t in
      let st, b = embed st (n :: ctx) b in
      st, E.mkApp letc t [ty; E.mkLam b]
   | Eq(lhs, rhs) ->
-     let st, cmpf = mkQ st (EQTypeCode loc) in
      let st, lhs = embed st ctx lhs in
      let st, rhs = embed st ctx rhs in
-     st, E.mkApp eqc cmpf [lhs;rhs]
+     st, E.mkApp eqc lhs [rhs]
 end
 
 (* builtin *************************************************************** *)
 
-exception TypeError of position option * E.term * E.term * E.term
+exception TypeError of Data.term M.t * Data.custom_state * position option * E.term * E.term * E.term
+exception NotEqType of Data.term M.t * Data.custom_state * position option * E.term
 
 let extra_builtins = let open BI in [
   MLCode(Pred("type-error",
@@ -81,10 +78,19 @@ let extra_builtins = let open BI in [
     In(any,"its type",
     In(any,"the type expected by its context",
     Read("raise a fatal type inference error")))),
-    (fun t ty ety ~depth:_ _ { state } ->
+    (fun t ty ety ~depth:_ _ { assignments; state } ->
        let loc = P.find_opt t (CS.get rs_positions state) in
-       raise (TypeError(loc,t,ty,ety)))),
-  DocNext)
+       raise (TypeError(assignments,state,loc,t,ty,ety)))),
+  DocNext);
+
+  MLCode(Pred("eqtype-error",
+    In(any,"the term",
+    Read("raise a fatal type inference error")),
+    (fun t ~depth:_ _ { assignments; state } ->
+       let loc = P.find_opt t (CS.get rs_positions state) in
+       raise (NotEqType(assignments,state,loc,t)))),
+  DocNext);
+
 ]
 
 let _ =
@@ -99,12 +105,26 @@ let subtext text fmt ( { Lexing.pos_cnum = a } , { Lexing.pos_cnum = b } ) =
   Format.fprintf fmt "@[<v 2>  %s@;%s@]" text
   (make a ' ' ^ make (b-a) '^' ^ make (length text - b) ' ')
 
-let pp_err text loc t ty ety =
+let pp_result text assignments state =
+  M.iter (fun k v ->
+     let loc = M.find k (CS.get rs_output state) in
+     Format.printf "@[<v>The term:@ %a@ has type: %a@]@\n@\n"
+       (subtext text) loc (Pp.term 0) (E.of_term v))
+    assignments
+
+let pp_type_err text loc t ty ety =
   match loc with
   | Some loc ->
-      Format.printf "@[<hv>Type error:@ %a@ has type %a@ but is expected to have type %a@]@\n%!" (subtext text) loc (Pp.term 0) ty (Pp.term 0) ety
+      Format.printf "@[<v>Type error:@ %a@ has type %a@ but is expected to have type %a@]@\n%!" (subtext text) loc (Pp.term 0) ty (Pp.term 0) ety
   | None ->
-      Format.printf "@[<hv>Type error:@ the term: %a@ has type %a@ but is expected to have type %a@]@\n%!" (Pp.term 0) t (Pp.term 0) ty (Pp.term 0) ety
+      Format.printf "@[<v>Type error:@ the term: %a@ has type %a@ but is expected to have type %a@]@\n%!" (Pp.term 0) t (Pp.term 0) ty (Pp.term 0) ety
+
+let pp_eqtype_err text loc t =
+  match loc with
+  | Some loc ->
+      Format.printf "@[<v>Equality type constraint unsatisfied at:@ %a@]@\n%!" (subtext text) loc
+  | None ->
+      Format.printf "@[<v>Equality type constraint unsatisfied at:@ %a@]@\n%!"(Pp.term 0) t
 
 let w =
   (* load the elpi program *)
@@ -116,37 +136,31 @@ let w =
     with _ -> [] in
   let builtins = BI.builtin_of_declaration
     (Elpi_builtin.std_declarations @ extra_builtins) in
-  let header, _ = Setup.init ~builtins ~basedir:"./" elpi_flags in
+  let header, _ = Setup.init ~builtins ~basedir:"./" (elpi_flags @ List.tl (Array.to_list Sys.argv)) in
   let p = Parse.program ["w.elpi"] in
   let p = Compile.program header [p] in
 
 fun (text, ast) ->
   (* run w on a term *)
   let q = C.query p (fun ~depth:_ st ->
-    let st, ty = mkQ st (TypeInfo ast.loc) in
+    let st, ty = mkQ st ast.loc in
     let st, ast = embed st [] ast in
-    st, E.mkApp (E.Constants.from_stringc "w") ast [ty]) in
+    st, E.mkApp (E.Constants.from_stringc "main") ast [ty]) in
   
-  if not (Compile.static_check header q) then
-    failwith "w.elpi does not type check";
+  if Array.mem "-typecheck" Sys.argv then begin
+    if not (Compile.static_check header q) then
+      failwith "w.elpi does not type check";
+  end;
 
   let exe = Compile.link q in
 
   Format.printf "\n============= W: %s ==============\n%!" text;
   match Execute.once exe with
-  | Execute.Success { Data.assignments; state } ->
-      M.iter (fun k v ->
-        match M.find k (CS.get rs_output state) with
-        | TypeInfo loc ->
-            Format.printf "@[<hv>The term:@ %a@ has type: %a@]@\n@\n"
-              (subtext text) loc (Pp.term 0) (E.of_term v)
-        | EQTypeCode loc ->
-            Format.printf "@[<hv>The test:@ %a@ should call: %a@]@\n@\n"
-              (subtext text) loc (Pp.term 0) (E.of_term v))
-        assignments
+  | Execute.Success { Data.assignments; state } -> pp_result text assignments state
   | Failure -> failwith "w.elpi is buggy"
   | NoMoreSteps -> assert false
-  | exception TypeError(loc,t,ty,ety) -> pp_err text loc t ty ety
+  | exception TypeError(assignments,state,loc,t,ty,ety) -> pp_result text assignments state; pp_type_err text loc t ty ety
+  | exception NotEqType(assignments,state,loc,t) -> pp_result text assignments state; pp_eqtype_err text loc t
 ;;
 
 (* main ****************************************************************** *)
@@ -154,7 +168,12 @@ fun (text, ast) ->
 let parse s = s, Parser.main Lexer.token (Lexing.from_string s)
 
 (* poly *)
+let _ = w @@ parse "3 = 2"
+let _ = w @@ parse "(fun x -> x) = (fun x -> x)"
 let _ = w @@ parse "let id x = x in id []"
+let _ = w @@ parse "let refl x = x = x in refl []"
+let _ = w @@ parse "let refl x = x = x in refl (fun x -> x)"
+let _ = w @@ parse "let card x = size (undup x) in card []"
 let _ = w @@ parse "let id x = x in (id [], id 1)"
 let _ = w @@ parse "let f y = let g x = (x,y) in g y in f 1"
 (* eqtype *)
@@ -162,5 +181,4 @@ let _ = w @@ parse "let id x = x in id [1] = []"
 (* errors *)
 let _ = w @@ parse "size 1"
 let _ = w @@ parse "[1] = (1,1)"
-        
 (* vim:set foldmethod=marker: *)
