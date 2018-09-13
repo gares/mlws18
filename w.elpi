@@ -92,7 +92,7 @@ eqbar _ boolean.
 eqbar X (list A) :- eqbar X A.
 eqbar X (pair A B) :- eqbar X A, eqbar X B.
 
-eqbar X T :- var T, declare_constraint (eqbar X T) [T,_].
+eqbar X T :- var T, new_constraint (eqbar X T) [T,_].
 
 eqbar X _ :- eqtype-error X.
 
@@ -100,7 +100,7 @@ eqbar X _ :- eqtype-error X.
 
 pred theta i:list tye.
 
-theta L :- declare_constraint (theta L) _.
+theta L :- new_constraint (theta L) _.
 
 constraint w gammabar eqbar theta {
 
@@ -117,7 +117,7 @@ mem-theta [uvar _ _|XS] Y :- mem-theta XS Y.
 pred gammabar i:ty, o:ty.
 
 gammabar (mono FT) FP :-
-  declare_constraint (gammabar (mono FT) FP) _.
+  new_constraint (gammabar (mono FT) FP) _.
 
 constraint w gammabar eqbar theta {
 
@@ -165,6 +165,8 @@ copy (uvar U L) (uvar U L).
 }
 
 % {{{ stdlib: mem, filter, if...
+
+new_constraint P L :- declare_constraint P L.
 
 filter [] _ [].
 filter [X|XS] P [X|YS] :- P X, !, filter XS P YS.
