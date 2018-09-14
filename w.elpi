@@ -3,8 +3,8 @@
 % terms
 kind term type.
 
-type num    int -> term.
-type global string -> term.
+type literal int -> term.
+type global  string -> term.
 
 type app term -> term -> term.
 type lam (term -> term) -> term.
@@ -39,7 +39,7 @@ pred w i:term, o:ty.
 
 % constants
 
-w (num _)          (mono integer).
+w (literal _)      (mono integer).
 w (global "plus")  (mono (integer ==> integer ==> integer)).
 
 w (global "[]")    (all any x\ mono (list x)).
@@ -58,8 +58,8 @@ w (app H A) (mono T) :-
 w (lam F) (mono (S ==> T)) :-
   pi x\ w x (mono S) => w (F x) (mono T).
 
-w (let F PT B) (mono TB) :-
-  w F (mono T),
+w (let E PT B) (mono TB) :-
+  w E (mono T),
   gammabar (mono T) PT,
   pi x\ w x PT => w (B x) (mono TB).
 
@@ -83,19 +83,6 @@ specialize X (mono TY) ETY :- type-error X TY ETY.
 
 main T TY :- theta [], w T TY.
 
-%%%%%%%%%%%%% eqbars %%%%%%%%%%%%%%%%
-
-pred eqbar i:term, i:tye.
-
-eqbar _ integer.
-eqbar _ boolean.
-eqbar X (list A) :- eqbar X A.
-eqbar X (pair A B) :- eqbar X A, eqbar X B.
-
-eqbar X T :- var T, new_constraint (eqbar X T) [T,_].
-
-eqbar X _ :- eqtype-error X.
-
 %%%%%%%%%%%%% theta %%%%%%%%%%%%%%%%
 
 pred theta i:list tye.
@@ -112,6 +99,19 @@ mem-theta [uvar _ _|XS] Y :- mem-theta XS Y.
 
 }
 
+%%%%%%%%%%%%% eqbar %%%%%%%%%%%%%%%%
+
+pred eqbar i:term, i:tye.
+
+eqbar _ integer.
+eqbar _ boolean.
+eqbar X (list A) :- eqbar X A.
+eqbar X (pair A B) :- eqbar X A, eqbar X B.
+
+eqbar X T :- var T, new_constraint (eqbar X T) [T,_].
+
+eqbar X _ :- eqtype-error X.
+
 %%%%%%%%%%%% gammabar %%%%%%%%%%%%%
 
 pred gammabar i:ty, o:ty.
@@ -123,14 +123,14 @@ constraint w gammabar eqbar theta {
 
 rule (theta L)                   % matched
      \  (G ?- gammabar T T1)     % matched and removed
-     |  (generalize L G T POLYT) % guard
+     |  (generalize L G T POLYT) % guard + syntesis
     <=> (T1 = POLYT).            % new goal
 
-generalize EqVars Gamma (mono T) PolyT :-
+generalize Theta Gamma (mono T) PolyT :-
   free-ty (mono T) [] VT,
   free-gamma Gamma [] VGamma,
   filter VT (x\ not(mem VGamma x)) ToQuantify,
-  bind EqVars ToQuantify T PolyT.
+  bind ToQuantify Theta T PolyT.
 
 % computation of free (unification) variables
 free-ty (mono X) L L1 :- free X L L1.
@@ -146,10 +146,10 @@ free (uvar X _) L L1 :- if (mem L X) (L1 = L) (L1 = [X|L]).
 free _ L L.
 
 % quantification (binding) of a list of variables
-bind _ [] T (mono T1) :- copy T T1.
-bind EqVars [X|XS] T (all E x\ T2 x) :-
-  if (mem-theta EqVars (uvar X _)) (E = eqt) (E = any),
-  bind EqVars XS T T1,
+bind [] _ T (mono T1) :- copy T T1.
+bind [X|XS] Theta T (all E x\ T2 x) :-
+  if (mem-theta Theta (uvar X _)) (E = eqt) (E = any),
+  bind XS Theta T T1,
   pi c\ copy (uvar X _) c => copy-ty T1 (T2 c).
 
 copy-ty (mono X1) (mono X2) :- copy X1 X2.

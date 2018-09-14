@@ -15,8 +15,8 @@ let cs_output = C.State.declare ~name:"output-map"
 let rs_output = CS.declare ~name:"output-map"
   ~init:(CS.CompilerState (cs_output, fun x -> x)) ~pp:(M.pp pp_position)
 
-let mkQ st loc =
-  let st, name, t = C.fresh_Arg st ~name_hint:"?" ~args:[] in
+let mkQ ?(name_hint="q") st loc =
+  let st, name, t = C.fresh_Arg st ~name_hint ~args:[] in
   let st = C.State.update cs_output st (M.add name loc) in
   st, t
 
@@ -29,26 +29,26 @@ let rs_positions = CS.declare ~name:"positions"
 
 (* terms -> elpi terms ************************************************** *)
 
-let appc   = E.Constants.from_stringc "app"
-let lamc   = E.Constants.from_stringc "lam"
-let letc   = E.Constants.from_stringc "let"
-let eqc    = E.Constants.from_stringc "eq"
-let numc   = E.Constants.from_stringc "num"
-let globc = E.Constants.from_stringc "global"
+let appc     = E.Constants.from_stringc "app"
+let lamc     = E.Constants.from_stringc "lam"
+let letc     = E.Constants.from_stringc "let"
+let eqc      = E.Constants.from_stringc "eq"
+let literalc = E.Constants.from_stringc "literal"
+let globalc  = E.Constants.from_stringc "global"
 
 let save_position loc (st, t) =
   let st = C.State.update cs_positions st (P.add t loc) in
   st, t
 
 let rec lookup x = function
-  | [] -> E.mkApp globc (E.C.of_string x) []
+  | [] -> E.mkApp globalc (E.C.of_string x) []
   | y :: ys when x = y -> E.mkConst (List.length ys)
   | _ :: ys -> lookup x ys
 
 let rec embed st ctx { v; loc } = save_position loc begin
   match v with
   | Const s -> st, lookup s ctx
-  | Int n -> st, E.mkApp numc (E.C.of_int n) []
+  | Int n -> st, E.mkApp literalc (E.C.of_int n) []
   | App(h,a) ->
      let st, h = embed st ctx h in
      let st, a = embed st ctx a in
@@ -69,10 +69,23 @@ end
 
 (* builtin *************************************************************** *)
 
-exception TypeError of Data.term M.t * Data.custom_state * position option * E.term * E.term * E.term
-exception NotEqType of Data.term M.t * Data.custom_state * position option * E.term
+exception TypeError of {
+  assignments : Data.term M.t;
+  state : Data.custom_state;
+  loc : position option;
+  t : E.term;
+  ty : E.term;
+  ety : E.term;
+}
+exception NotEqType of {
+  assignments : Data.term M.t;
+  state : Data.custom_state;
+  loc : position option;
+  t : E.term;
+}
 
 let extra_builtins = let open BI in [
+
   MLCode(Pred("type-error",
     In(any,"the term",
     In(any,"its type",
@@ -80,15 +93,15 @@ let extra_builtins = let open BI in [
     Read("raise a fatal type inference error")))),
     (fun t ty ety ~depth:_ _ { assignments; state } ->
        let loc = P.find_opt t (CS.get rs_positions state) in
-       raise (TypeError(assignments,state,loc,t,ty,ety)))),
+       raise (TypeError{assignments; state; loc; t; ty; ety }))),
   DocNext);
 
   MLCode(Pred("eqtype-error",
     In(any,"the term",
-    Read("raise a fatal type inference error")),
+    Read("raise a fatal equality type error")),
     (fun t ~depth:_ _ { assignments; state } ->
        let loc = P.find_opt t (CS.get rs_positions state) in
-       raise (NotEqType(assignments,state,loc,t)))),
+       raise (NotEqType{assignments; state; loc; t}))),
   DocNext);
 
 ]
@@ -143,7 +156,7 @@ let w =
 fun (text, ast) ->
   (* run w on a term *)
   let q = C.query p (fun ~depth:_ st ->
-    let st, ty = mkQ st ast.loc in
+    let st, ty = mkQ st ~name_hint:"Q" ast.loc in
     let st, ast = embed st [] ast in
     st, E.mkApp (E.Constants.from_stringc "main") ast [ty]) in
   
@@ -156,11 +169,16 @@ fun (text, ast) ->
 
   Format.printf "\n============= W: %s ==============\n%!" text;
   match Execute.once exe with
-  | Execute.Success { Data.assignments; state } -> pp_result text assignments state
+  | Execute.Success { Data.assignments; state } ->
+      pp_result text assignments state
   | Failure -> failwith "w.elpi is buggy"
   | NoMoreSteps -> assert false
-  | exception TypeError(assignments,state,loc,t,ty,ety) -> pp_result text assignments state; pp_type_err text loc t ty ety
-  | exception NotEqType(assignments,state,loc,t) -> pp_result text assignments state; pp_eqtype_err text loc t
+  | exception TypeError{assignments; state; loc; t; ty; ety } ->
+      pp_result text assignments state;
+      pp_type_err text loc t ty ety
+  | exception NotEqType{assignments; state; loc; t } ->
+      pp_result text assignments state;
+      pp_eqtype_err text loc t
 ;;
 
 (* main ****************************************************************** *)
