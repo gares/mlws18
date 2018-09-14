@@ -100,7 +100,7 @@ eqbar X _ :- eqtype-error X.
 
 pred theta i:list tye.
 
-theta L :- new_constraint (theta L) _.
+theta L :- new_constraint (theta L) [_].
 
 constraint w gammabar eqbar theta {
 
@@ -117,7 +117,7 @@ mem-theta [uvar _ _|XS] Y :- mem-theta XS Y.
 pred gammabar i:ty, o:ty.
 
 gammabar (mono FT) FP :-
-  new_constraint (gammabar (mono FT) FP) _.
+  new_constraint (gammabar (mono FT) FP) [_].
 
 constraint w gammabar eqbar theta {
 
