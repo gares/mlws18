@@ -70,15 +70,15 @@ end
 (* builtin *************************************************************** *)
 
 exception TypeError of {
-  assignments : Data.term M.t;
-  state : Data.custom_state;
+  assignments : E.term M.t;
+  state : E.custom_state;
   loc : position option;
   t : E.term;
   ty : E.term;
   ety : E.term;
 }
 exception NotEqType of {
-  assignments : Data.term M.t;
+  assignments : E.term M.t;
   state : Data.custom_state;
   loc : position option;
   t : E.term;
@@ -122,7 +122,7 @@ let pp_result text assignments state =
   M.iter (fun k v ->
      let loc = M.find k (CS.get rs_output state) in
      Format.printf "@[<v>The term:@ %a@ has type: %a@]@\n@\n"
-       (subtext text) loc (Pp.term 0) (E.of_term v))
+       (subtext text) loc (Pp.term 0) v)
     assignments
 
 let pp_type_err text loc t ty ety =
@@ -169,7 +169,8 @@ fun (text, ast) ->
 
   Format.printf "\n============= W: %s ==============\n%!" text;
   match Execute.once exe with
-  | Execute.Success { Data.assignments; state } ->
+  | Execute.Success s ->
+      let { E.assignments; state } = E.of_solution s in
       pp_result text assignments state
   | Failure -> failwith "w.elpi is buggy"
   | NoMoreSteps -> assert false
