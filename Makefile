@@ -8,3 +8,7 @@ all:
 	ocamlfind opt -c parser.ml
 	ocamlfind opt -c pmap.ml
 	ocamlfind opt -package elpi,ppx_import,ppx_deriving.std -linkpkg ast.cmx lexer.cmx parser.cmx pmap.cmx toyml.ml -o toyml
+
+run: all
+	cat input | ./toyml -typecheck > /tmp/output
+	diff -u output /tmp/output

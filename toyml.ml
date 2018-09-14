@@ -167,18 +167,11 @@ fun (text, ast) ->
 
 let parse s = s, Parser.main Lexer.token (Lexing.from_string s)
 
-(* poly *)
-let _ = w @@ parse "3 = 2"
-let _ = w @@ parse "(fun x -> x) = (fun x -> x)"
-let _ = w @@ parse "let id x = x in id []"
-let _ = w @@ parse "let refl x = x = x in refl []"
-let _ = w @@ parse "let refl x = x = x in refl (fun x -> x)"
-let _ = w @@ parse "let card x = size (undup x) in card []"
-let _ = w @@ parse "let id x = x in (id [], id 1)"
-let _ = w @@ parse "let f y = let g x = (x,y) in g y in f 1"
-(* eqtype *)
-let _ = w @@ parse "let id x = x in id [1] = []"
-(* errors *)
-let _ = w @@ parse "size 1"
-let _ = w @@ parse "[1] = (1,1)"
+let _ =
+  try
+    while true; do
+      w @@ parse @@ input_line stdin;
+    done
+  with End_of_file -> ()
+
 (* vim:set foldmethod=marker: *)
