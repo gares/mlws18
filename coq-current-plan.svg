@@ -95,14 +95,14 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="2560"
-     inkscape:window-height="1529"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
      id="namedview4"
      showgrid="false"
      inkscape:zoom="1.7417504"
-     inkscape:cx="-10.495288"
-     inkscape:cy="500.9752"
-     inkscape:window-x="1920"
+     inkscape:cx="296.47014"
+     inkscape:cy="353.87313"
+     inkscape:window-x="0"
      inkscape:window-y="34"
      inkscape:window-maximized="1"
      inkscape:current-layer="svg2" />
@@ -169,7 +169,7 @@
      ry="67.073334" />
   <text
      xml:space="preserve"
-     style="font-style:normal;font-weight:normal;font-size:12.80000019px;line-height:0%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ff6600;fill-opacity:1;stroke:none;stroke-width:1.06666672;"
+     style="font-style:normal;font-weight:normal;font-size:12.80000019px;line-height:0%;font-family:Cabin;letter-spacing:0px;word-spacing:0px;fill:#ff6600;fill-opacity:1;stroke:none;stroke-width:1.06666672;-inkscape-font-specification:Cabin;font-stretch:normal;font-variant:normal;"
      x="300.39117"
      y="412.28622"
      id="text3800"><tspan
@@ -177,10 +177,10 @@
        id="tspan3802"
        x="300.39117"
        y="412.28622"
-       style="font-size:42.66666667px;line-height:1.25;font-family:'pencilPete FONT';stroke-width:1.06666672;fill:#ff6600;-inkscape-font-specification:'pencilPete FONT';font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal">kernel</tspan></text>
+       style="font-size:42.66666667px;line-height:1.25;font-family:Cabin;stroke-width:1.06666672;fill:#ff6600;-inkscape-font-specification:Cabin;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;">kernel</tspan></text>
   <text
      xml:space="preserve"
-     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:sans-serif;-inkscape-font-specification:Sans;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#ff6600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate;"
+     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:Cabin;-inkscape-font-specification:Cabin;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#ff6600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate;"
      x="192.73497"
      y="292.47589"
      id="text3804"><tspan
@@ -188,12 +188,12 @@
        id="tspan3806"
        x="192.73497"
        y="292.47589"
-       style="font-size:42.66666667px;line-height:1.25;font-family:'pencilPete FONT';stroke-width:1.06666672px;fill:#0066ff;-inkscape-font-specification:'pencilPete FONT';font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal">elabo<tspan
-   style="fill:#ff6600;fill-opacity:1"
+       style="font-size:42.66666667px;line-height:1.25;font-family:Cabin;stroke-width:1.06666672px;fill:#0066ff;-inkscape-font-specification:Cabin;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;">elabo<tspan
+   style="fill:#ff6600;fill-opacity:1;-inkscape-font-specification:Cabin;font-family:Cabin;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;"
    id="tspan5794">rator</tspan></tspan></text>
   <text
      xml:space="preserve"
-     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:sans-serif;-inkscape-font-specification:Sans;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#ff6600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate"
+     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:Cabin;-inkscape-font-specification:Cabin;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#ff6600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate;"
      x="396.24969"
      y="236.88159"
      id="text3804-3"><tspan
@@ -201,8 +201,8 @@
        id="tspan3806-6"
        x="396.24969"
        y="236.88159"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'pencilPete FONT';-inkscape-font-specification:'pencilPete FONT';fill:#ff6600;stroke-width:1.06666672px"><tspan
-   style="fill:#0066ff;fill-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:Cabin;-inkscape-font-specification:Cabin;fill:#ff6600;stroke-width:1.06666672px;"><tspan
+   style="fill:#0066ff;fill-opacity:1;-inkscape-font-specification:Cabin;font-family:Cabin;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;"
    id="tspan4611">tac</tspan>tics</tspan></text>
   <path
      style="fill:none;stroke:#beb0b0;stroke-width:2.14720011;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:6.44160003, 6.44160003;stroke-dashoffset:2.21429992;stroke-opacity:1;marker-end:url(#EmptyTriangleOutL)"
@@ -330,18 +330,18 @@
      inkscape:connector-curvature="0" />
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:'pencilPete FONT';-inkscape-font-specification:'pencilPete FONT';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-     x="526.14337"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:Cabin;-inkscape-font-specification:Cabin;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     x="516.14337"
      y="435.88239"
      id="text4948"><tspan
        sodipodi:role="line"
        id="tspan4946"
-       x="526.14337"
+       x="516.14337"
        y="435.88239"
-       style="fill:#ff6600">OCaml</tspan></text>
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Cabin;-inkscape-font-specification:Cabin;fill:#ff6600">OCaml</tspan></text>
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:'pencilPete FONT';-inkscape-font-specification:'pencilPete FONT';letter-spacing:0px;word-spacing:0px;fill:#0066ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:40px;line-height:125%;font-family:Cabin;-inkscape-font-specification:Cabin;letter-spacing:0px;word-spacing:0px;fill:#0066ff;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;"
      x="260.3222"
      y="36.780315"
      id="text4952"><tspan
@@ -349,10 +349,10 @@
        id="tspan4950"
        x="260.3222"
        y="36.780315"
-       style="fill:#0066ff">Elpi</tspan></text>
+       style="fill:#0066ff;-inkscape-font-specification:Cabin;font-family:Cabin;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;">Elpi</tspan></text>
   <text
      xml:space="preserve"
-     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:sans-serif;-inkscape-font-specification:Sans;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#ff6600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate"
+     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:Cabin;-inkscape-font-specification:Cabin;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#ff6600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate;"
      x="43.041084"
      y="218.72276"
      id="text3804-3-2"><tspan
@@ -360,8 +360,8 @@
        id="tspan3806-6-7"
        x="43.041084"
        y="218.72276"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'pencilPete FONT';-inkscape-font-specification:'pencilPete FONT';fill:#ff6600;stroke-width:1.06666672px"><tspan
-   style="fill:#0066ff;fill-opacity:1"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:Cabin;-inkscape-font-specification:Cabin;fill:#ff6600;stroke-width:1.06666672px;"><tspan
+   style="fill:#0066ff;fill-opacity:1;-inkscape-font-specification:Cabin;font-family:Cabin;font-weight:normal;font-style:normal;font-stretch:normal;font-variant:normal;"
    id="tspan4597">com</tspan>mands</tspan></text>
   <path
      style="fill:#0066ff;fill-opacity:1;stroke:none;stroke-width:0.81194961;stroke-miterlimit:4;stroke-dasharray:2.43584888, 2.43584888;stroke-dashoffset:1.10000002;stroke-opacity:1"
@@ -466,18 +466,18 @@
      sodipodi:nodetypes="cc" />
   <text
      xml:space="preserve"
-     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:sans-serif;-inkscape-font-specification:Sans;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#aad400;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate"
-     x="187.43343"
-     y="121.44327"
+     style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:12.80000019px;line-height:0%;font-family:Cabin;-inkscape-font-specification:Cabin;text-indent:0;text-align:start;text-decoration:none;text-decoration-line:none;letter-spacing:0px;word-spacing:0px;text-transform:none;writing-mode:lr-tb;direction:ltr;baseline-shift:baseline;text-anchor:start;display:inline;overflow:visible;visibility:visible;fill:#aad400;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1.06666672px;marker:none;enable-background:accumulate"
+     x="168.48697"
+     y="120.86913"
      id="text3804-5"><tspan
        sodipodi:role="line"
        id="tspan3806-3"
-       x="187.43343"
-       y="121.44327"
-       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:'pencilPete FONT';-inkscape-font-specification:'pencilPete FONT';fill:#aad400;stroke-width:1.06666672px"><tspan
-         style="fill:#0066ff"
-         id="tspan5672">user</tspan><tspan
-         style="fill:#0066ff"
+       x="168.48697"
+       y="120.86913"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.66666794px;line-height:1.25;font-family:Cabin;-inkscape-font-specification:Cabin;fill:#aad400;stroke-width:1.06666672px"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Cabin;-inkscape-font-specification:Cabin;fill:#0066ff"
+         id="tspan5672">user </tspan><tspan
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Cabin;-inkscape-font-specification:Cabin;fill:#0066ff"
          id="tspan5792">extensions</tspan></tspan></text>
   <path
      style="opacity:1;vector-effect:none;fill:#0066ff;fill-opacity:1;stroke:none;stroke-width:0.01794172px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"

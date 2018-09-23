@@ -43,6 +43,18 @@ The term:
 has type: all any c0 \ mono (c0 ==> c0)
 
 
+============= W: let id x = x in (id [], id 1) ==============
+The term:
+  let id x = x in (id [], id 1)
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+has type: mono (pair (list X1) integer)
+
+The term:
+  let id x = x in (id [], id 1)
+         ^^^^^                 
+has type: all any c0 \ mono (c0 ==> c0)
+
+
 ============= W: let refl x = x = x in refl [] ==============
 The term:
   let refl x = x = x in refl []
@@ -80,18 +92,6 @@ The term:
   let card x = size (undup x) in card []
            ^^^^^^^^^^^^^^^^^^           
 has type: all eqt c0 \ mono (list c0 ==> integer)
-
-
-============= W: let id x = x in (id [], id 1) ==============
-The term:
-  let id x = x in (id [], id 1)
-  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-has type: mono (pair (list X1) integer)
-
-The term:
-  let id x = x in (id [], id 1)
-         ^^^^^                 
-has type: all any c0 \ mono (c0 ==> c0)
 
 
 ============= W: let f y = let g x = (x,y) in g y in f 1 ==============

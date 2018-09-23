@@ -27,6 +27,10 @@ let cs_positions = C.State.declare ~name:"positions"
 let rs_positions = CS.declare ~name:"positions"
   ~init:(CS.CompilerState (cs_positions, fun x -> x)) ~pp:(fun _ _ -> ())
 
+let save_position loc (st, t) =
+  let st = C.State.update cs_positions st (P.add t loc) in
+  st, t
+
 (* terms -> elpi terms ************************************************** *)
 
 let appc     = E.Constants.from_stringc "app"
@@ -35,10 +39,6 @@ let letc     = E.Constants.from_stringc "let"
 let eqc      = E.Constants.from_stringc "eq"
 let literalc = E.Constants.from_stringc "literal"
 let globalc  = E.Constants.from_stringc "global"
-
-let save_position loc (st, t) =
-  let st = C.State.update cs_positions st (P.add t loc) in
-  st, t
 
 let rec lookup x = function
   | [] -> E.mkApp globalc (E.C.of_string x) []
