@@ -72,7 +72,7 @@ end
 exception TypeError of {
   assignments : E.term M.t;
   state : E.custom_state;
-  loc : position option;
+
   t : E.term;
   ty : E.term;
   ety : E.term;
@@ -80,7 +80,7 @@ exception TypeError of {
 exception NotEqType of {
   assignments : E.term M.t;
   state : Data.custom_state;
-  loc : position option;
+
   t : E.term;
 }
 
@@ -92,16 +92,14 @@ let extra_builtins = let open BI in [
     In(any,"the type expected by its context",
     Read("raise a fatal type inference error")))),
     (fun t ty ety ~depth:_ _ { assignments; state } ->
-       let loc = P.find_opt t (CS.get rs_positions state) in
-       raise (TypeError{assignments; state; loc; t; ty; ety }))),
+       raise (TypeError{assignments; state; t; ty; ety }))),
   DocNext);
 
   MLCode(Pred("eqtype-error",
     In(any,"the term",
     Read("raise a fatal equality type error")),
     (fun t ~depth:_ _ { assignments; state } ->
-       let loc = P.find_opt t (CS.get rs_positions state) in
-       raise (NotEqType{assignments; state; loc; t}))),
+       raise (NotEqType{assignments; state; t}))),
   DocNext);
 
 ]
@@ -125,14 +123,16 @@ let pp_result text assignments state =
        (subtext text) loc (Pp.term 0) v)
     assignments
 
-let pp_type_err text loc t ty ety =
+let pp_type_err text t ty ety state =
+  let loc = P.find_opt t (CS.get rs_positions state) in
   match loc with
   | Some loc ->
       Format.printf "@[<v>Type error:@ %a@ has type %a@ but is expected to have type %a@]@\n%!" (subtext text) loc (Pp.term 0) ty (Pp.term 0) ety
   | None ->
       Format.printf "@[<v>Type error:@ the term: %a@ has type %a@ but is expected to have type %a@]@\n%!" (Pp.term 0) t (Pp.term 0) ty (Pp.term 0) ety
 
-let pp_eqtype_err text loc t =
+let pp_eqtype_err text t state =
+  let loc = P.find_opt t (CS.get rs_positions state) in
   match loc with
   | Some loc ->
       Format.printf "@[<v>Equality type constraint unsatisfied at:@ %a@]@\n%!" (subtext text) loc
@@ -149,7 +149,9 @@ let w =
     with _ -> [] in
   let builtins = BI.builtin_of_declaration
     (Elpi_builtin.std_declarations @ extra_builtins) in
-  let header, _ = Setup.init ~builtins ~basedir:"./" (elpi_flags @ List.tl (Array.to_list Sys.argv)) in
+  let header, _ = Setup.init ~builtins ~basedir:"./"
+    (elpi_flags @ List.tl (Array.to_list Sys.argv)) in
+
   let p = Parse.program ["w.elpi"] in
   let p = Compile.program header [p] in
 
@@ -174,12 +176,12 @@ fun (text, ast) ->
       pp_result text assignments state
   | Failure -> failwith "w.elpi is buggy"
   | NoMoreSteps -> assert false
-  | exception TypeError{assignments; state; loc; t; ty; ety } ->
+  | exception TypeError{assignments; state; t; ty; ety } ->
       pp_result text assignments state;
-      pp_type_err text loc t ty ety
-  | exception NotEqType{assignments; state; loc; t } ->
+      pp_type_err text t ty ety state
+  | exception NotEqType{assignments; state; t } ->
       pp_result text assignments state;
-      pp_eqtype_err text loc t
+      pp_eqtype_err text t state
 ;;
 
 (* main ****************************************************************** *)

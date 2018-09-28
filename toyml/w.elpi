@@ -16,8 +16,8 @@ type eq  term -> term -> term.
 kind tye type.
 
 infixr ==> 50.
-type (==>) tye -> tye -> tye.
 
+type (==>)   tye -> tye -> tye.
 type integer tye.
 type boolean tye.
 type list    tye -> tye.
@@ -74,13 +74,16 @@ pred err.
 
 w X (mono ETY) :- not err, err => w X (mono TY), type-error X TY ETY.
 
+% schemas
 pred specialize i:term, i:ty, o:tye.
 
 specialize X (all any F) T :- specialize X (F E_) T.
 specialize X (all eqt F) T :- specialize X (F E) T, (eqbar X E).
 specialize _ (mono T) T.
+
 specialize X (mono TY) ETY :- type-error X TY ETY.
 
+% main
 main T TY :- theta [], w T TY.
 
 %%%%%%%%%%%%% theta %%%%%%%%%%%%%%%%
@@ -91,11 +94,11 @@ theta L :- new_constraint (theta L) [_].
 
 constraint w gammabar eqbar theta {
 
-rule (eqbar _ V) \ (theta L) | (not(mem-theta L V)) <=> (theta [V|L]).
+rule (eqbar _ V) \ (theta L) | (not(mem-theta L V)) <=> (theta (V :: L)).
 
 % 'uvar X L' is the frozen 'X' and its arguments 'L'
-mem-theta [uvar X _|_] (uvar X _).
-mem-theta [uvar _ _|XS] Y :- mem-theta XS Y.
+mem-theta (uvar X _ :: _) (uvar X _).
+mem-theta (uvar _ _ :: XS) Y :- mem-theta XS Y.
 
 }
 
@@ -116,15 +119,15 @@ eqbar X _ :- eqtype-error X.
 
 pred gammabar i:ty, o:ty.
 
-gammabar (mono FT) FP :-
-  new_constraint (gammabar (mono FT) FP) [_].
+gammabar (mono T) TS :-
+  new_constraint (gammabar (mono T) TS) [_].
 
 constraint w gammabar eqbar theta {
 
 rule (theta L)                   % matched
-     \  (G ?- gammabar T T1)     % matched and removed
+     \  (G ?- gammabar T TS)     % matched and removed
      |  (generalize L G T POLYT) % guard + syntesis
-    <=> (T1 = POLYT).            % new goal
+    <=> (TS = POLYT).            % new goal
 
 generalize Theta Gamma (mono T) PolyT :-
   free-ty (mono T) [] VT,
